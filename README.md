@@ -34,6 +34,9 @@ Este proyecto es una API Serverless construida con AWS Lambda, API Gateway y Nod
     "acompañamiento": "papas fritas"
   }
 }
+```
+## Prueba del endpoint POST:
+https://github.com/roxanatera/serverless-project1/blob/main/img/post_1.png
 
 
 ## 2. Obtener un pedido por ID (GET)
@@ -50,3 +53,6 @@ Este proyecto es una API Serverless construida con AWS Lambda, API Gateway y Nod
     "acompañamiento": "papas fritas",
     "estado": "En preparación"
   }
+`
+## Prueba del endpoint GET:
+https://raw.githubusercontent.com/roxanatera/serverless-project1/refs/heads/main/img/get_2.PNG
