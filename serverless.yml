@@ -1,0 +1,20 @@
+service: burguer
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: us-east-1
+
+functions:
+  newOrder:
+    handler: handler.newOrder
+    events:
+      - httpApi:
+          path: /order
+          method: post
+  getOrder:
+    handler: handler.getOrder
+    events:
+      - httpApi:
+          path: /order/{orderId}
+          method: get
