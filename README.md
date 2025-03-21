@@ -1,27 +1,52 @@
-## Serverless Project: API en AWS Lambda
+# Serverless Burger API
 
-Proyecto de ejemplo para desplegar una función Lambda en AWS usando Serverless Framework (Node.js 22.x).
+Este proyecto es una API Serverless construida con AWS Lambda, API Gateway y Node.js, utilizando el framework Serverless. La API permite crear y recuperar pedidos de hamburguesas.
 
----
+## Estructura del Proyecto
 
-## Requisitos
-- **Node.js v18+**
-- **Serverless Framework v4+**
-- Cuenta en [Serverless Dashboard](https://app.serverless.com) (gratuita para proyectos personales)
-- AWS CLI configurado (`aws configure`)
+- `handler.js`: Contiene la lógica de las funciones Lambda.
+- `serverless.yml`: Archivo de configuración para Serverless Framework.
+- `img/`: Carpeta que contiene capturas de pantalla de las pruebas.
+- `README.md`: Este archivo, con la documentación del proyecto.
 
----
+## Endpoints
 
-## Instalación
-```bash
-# Clona el repositorio
-git clone [URL_DEL_REPOSITORIO]
-cd serverless-project1
+### 1. Crear un nuevo pedido (POST)
 
-# Instala Serverless Framework globalmente
-npm install -g serverless
+- **URL**: `/order`
+- **Método**: `POST`
+- **Body** (JSON):
+  ```json
+  {
+    "pedidoId": "001",
+    "tipoBurger": "Doble Carne",
+    "toppings": ["queso cheddar", "tocino"],
+    "acompañamiento": "papas fritas"
+  }
+## Respuesta:
+ ```json
+{
+  "message": {
+    "orderId": "abc123",
+    "pedidoId": "001",
+    "tipoBurger": "Doble Carne",
+    "toppings": ["queso cheddar", "tocino"],
+    "acompañamiento": "papas fritas"
+  }
+}
 
 
-├── handler.js          # Código de la función Lambda
-├── serverless.yml      # Configuración de despliegue
-└── README.md
+## 2. Obtener un pedido por ID (GET)
+
+- **URL**: `/order/{orderId}`
+- **Método**: `GET`
+- **Respuesta**:
+  ```json
+  {
+    "orderId": "abc123",
+    "pedidoId": "001",
+    "tipoBurger": "Doble Carne",
+    "toppings": ["queso cheddar", "tocino"],
+    "acompañamiento": "papas fritas",
+    "estado": "En preparación"
+  }
