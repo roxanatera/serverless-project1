@@ -9,6 +9,39 @@
         "name": "aws",
         "runtime": "nodejs22.x",
         "region": "us-east-1",
+        "environment": {
+          "REGION": "us-east-1"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "sqs:SendMessage"
+                ],
+                "Resource": {
+                  "Fn::GetAtt": [
+                    "PendingOrderQueue",
+                    "Arn"
+                  ]
+                }
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "sqs:sendMessage"
+                ],
+                "Resource": {
+                  "Fn::GetAtt": [
+                    "OrdersToSendQueue",
+                    "Arn"
+                  ]
+                }
+              }
+            ]
+          }
+        },
         "stage": "dev",
         "versionFunctions": true,
         "compiledCloudFormationTemplate": {
@@ -25,6 +58,18 @@
               "Type": "AWS::Logs::LogGroup",
               "Properties": {
                 "LogGroupName": "/aws/lambda/burguer-dev-getOrder"
+              }
+            },
+            "PreOrderLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/burguer-dev-preOrder"
+              }
+            },
+            "SendOrderLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/burguer-dev-sendOrder"
               }
             },
             "IamRoleLambdaExecution": {
@@ -84,6 +129,46 @@
                               "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/burguer-dev*:*:*"
                             }
                           ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sqs:SendMessage"
+                          ],
+                          "Resource": {
+                            "Fn::GetAtt": [
+                              "PendingOrderQueue",
+                              "Arn"
+                            ]
+                          }
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sqs:sendMessage"
+                          ],
+                          "Resource": {
+                            "Fn::GetAtt": [
+                              "OrdersToSendQueue",
+                              "Arn"
+                            ]
+                          }
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sqs:ReceiveMessage",
+                            "sqs:DeleteMessage",
+                            "sqs:GetQueueAttributes"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::GetAtt": [
+                                "PendingOrderQueue",
+                                "Arn"
+                              ]
+                            }
+                          ]
                         }
                       ]
                     }
@@ -110,13 +195,18 @@
               "Properties": {
                 "Code": {
                   "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
-                  "S3Key": "serverless/burguer/dev/1742548683500-2025-03-21T09:18:03.500Z/burguer.zip"
+                  "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
                 },
                 "Handler": "handler.newOrder",
                 "Runtime": "nodejs22.x",
                 "FunctionName": "burguer-dev-newOrder",
                 "MemorySize": 1024,
                 "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "REGION": "us-east-1"
+                  }
+                },
                 "Role": {
                   "Fn::GetAtt": [
                     "IamRoleLambdaExecution",
@@ -133,13 +223,18 @@
               "Properties": {
                 "Code": {
                   "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
-                  "S3Key": "serverless/burguer/dev/1742548683500-2025-03-21T09:18:03.500Z/burguer.zip"
+                  "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
                 },
                 "Handler": "handler.getOrder",
                 "Runtime": "nodejs22.x",
                 "FunctionName": "burguer-dev-getOrder",
                 "MemorySize": 1024,
                 "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "REGION": "us-east-1"
+                  }
+                },
                 "Role": {
                   "Fn::GetAtt": [
                     "IamRoleLambdaExecution",
@@ -151,24 +246,125 @@
                 "GetOrderLogGroup"
               ]
             },
-            "NewOrderLambdaVersioniEWsltq5h3Tuli7di1O1KQUPHgPNHWF4aDTx1mKP6Fw": {
+            "PreOrderLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
+                  "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
+                },
+                "Handler": "handler.preOrder",
+                "Runtime": "nodejs22.x",
+                "FunctionName": "burguer-dev-preOrder",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "REGION": "us-east-1"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "PreOrderLogGroup"
+              ]
+            },
+            "SendOrderLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
+                  "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
+                },
+                "Handler": "handler.sendOrder",
+                "Runtime": "nodejs22.x",
+                "FunctionName": "burguer-dev-sendOrder",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "REGION": "us-east-1",
+                    "ORDERS_TO_SEND_QUEUE": {
+                      "Ref": "OrdersToSendQueue"
+                    }
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "SendOrderLogGroup"
+              ]
+            },
+            "NewOrderLambdaVersionXgFiHBs1wz4U2xK75ByDmNs5J2XMvUcI6zk2jywZQf0": {
               "Type": "AWS::Lambda::Version",
               "DeletionPolicy": "Retain",
               "Properties": {
                 "FunctionName": {
                   "Ref": "NewOrderLambdaFunction"
                 },
-                "CodeSha256": "Vg9VRzsFOQ2xqZEDI9A8p17yXsKByLmlDby2qaSdS10="
+                "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
               }
             },
-            "GetOrderLambdaVersionD9YRnhWLrFZtOi4LTJ4Vs6XICFh7KxyeCSb7t8IJQ": {
+            "GetOrderLambdaVersionfSHxgjSfw7QeoeM1KDzN96KJu0HjwuI2ssVAujEFRmM": {
               "Type": "AWS::Lambda::Version",
               "DeletionPolicy": "Retain",
               "Properties": {
                 "FunctionName": {
                   "Ref": "GetOrderLambdaFunction"
                 },
-                "CodeSha256": "Vg9VRzsFOQ2xqZEDI9A8p17yXsKByLmlDby2qaSdS10="
+                "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+              }
+            },
+            "PreOrderLambdaVersionsI1xpCuH2yISNyPV8XrWl5kQLt1txi2lDcB49aYic": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "PreOrderLambdaFunction"
+                },
+                "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+              }
+            },
+            "SendOrderLambdaVersionJAceTRw7MffN0uMv2VkC4O12CiGP4IscX2QA7TJ4s": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "SendOrderLambdaFunction"
+                },
+                "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+              }
+            },
+            "PreOrderEventSourceMappingSQSPendingOrderQueue": {
+              "Type": "AWS::Lambda::EventSourceMapping",
+              "DependsOn": [
+                "IamRoleLambdaExecution"
+              ],
+              "Properties": {
+                "BatchSize": 1,
+                "EventSourceArn": {
+                  "Fn::GetAtt": [
+                    "PendingOrderQueue",
+                    "Arn"
+                  ]
+                },
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "PreOrderLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Enabled": true
               }
             },
             "HttpApi": {
@@ -340,6 +536,18 @@
                 }
               },
               "DependsOn": "HttpApiIntegrationGetOrder"
+            },
+            "PendingOrderQueue": {
+              "Type": "AWS::SQS::Queue",
+              "Properties": {
+                "QueueName": "pendingOrderQueue"
+              }
+            },
+            "OrdersToSendQueue": {
+              "Type": "AWS::SQS::Queue",
+              "Properties": {
+                "QueueName": "ordersToSendQueue"
+              }
             }
           },
           "Outputs": {
@@ -352,7 +560,7 @@
             "NewOrderLambdaFunctionQualifiedArn": {
               "Description": "Current Lambda function version",
               "Value": {
-                "Ref": "NewOrderLambdaVersioniEWsltq5h3Tuli7di1O1KQUPHgPNHWF4aDTx1mKP6Fw"
+                "Ref": "NewOrderLambdaVersionXgFiHBs1wz4U2xK75ByDmNs5J2XMvUcI6zk2jywZQf0"
               },
               "Export": {
                 "Name": "sls-burguer-dev-NewOrderLambdaFunctionQualifiedArn"
@@ -361,10 +569,28 @@
             "GetOrderLambdaFunctionQualifiedArn": {
               "Description": "Current Lambda function version",
               "Value": {
-                "Ref": "GetOrderLambdaVersionD9YRnhWLrFZtOi4LTJ4Vs6XICFh7KxyeCSb7t8IJQ"
+                "Ref": "GetOrderLambdaVersionfSHxgjSfw7QeoeM1KDzN96KJu0HjwuI2ssVAujEFRmM"
               },
               "Export": {
                 "Name": "sls-burguer-dev-GetOrderLambdaFunctionQualifiedArn"
+              }
+            },
+            "PreOrderLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "PreOrderLambdaVersionsI1xpCuH2yISNyPV8XrWl5kQLt1txi2lDcB49aYic"
+              },
+              "Export": {
+                "Name": "sls-burguer-dev-PreOrderLambdaFunctionQualifiedArn"
+              }
+            },
+            "SendOrderLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "SendOrderLambdaVersionJAceTRw7MffN0uMv2VkC4O12CiGP4IscX2QA7TJ4s"
+              },
+              "Export": {
+                "Name": "sls-burguer-dev-SendOrderLambdaFunctionQualifiedArn"
               }
             },
             "HttpApiId": {
@@ -424,7 +650,7 @@
           "timeout": 6,
           "runtime": "nodejs22.x",
           "vpc": {},
-          "versionLogicalId": "NewOrderLambdaVersioniEWsltq5h3Tuli7di1O1KQUPHgPNHWF4aDTx1mKP6Fw"
+          "versionLogicalId": "NewOrderLambdaVersionXgFiHBs1wz4U2xK75ByDmNs5J2XMvUcI6zk2jywZQf0"
         },
         "getOrder": {
           "handler": "handler.getOrder",
@@ -444,14 +670,103 @@
           "timeout": 6,
           "runtime": "nodejs22.x",
           "vpc": {},
-          "versionLogicalId": "GetOrderLambdaVersionD9YRnhWLrFZtOi4LTJ4Vs6XICFh7KxyeCSb7t8IJQ"
+          "versionLogicalId": "GetOrderLambdaVersionfSHxgjSfw7QeoeM1KDzN96KJu0HjwuI2ssVAujEFRmM"
+        },
+        "preOrder": {
+          "handler": "handler.preOrder",
+          "events": [
+            {
+              "sqs": {
+                "arn": {
+                  "Fn::GetAtt": [
+                    "PendingOrderQueue",
+                    "Arn"
+                  ]
+                },
+                "batchSize": 1
+              }
+            }
+          ],
+          "name": "burguer-dev-preOrder",
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs22.x",
+          "vpc": {},
+          "versionLogicalId": "PreOrderLambdaVersionsI1xpCuH2yISNyPV8XrWl5kQLt1txi2lDcB49aYic"
+        },
+        "sendOrder": {
+          "handler": "handler.sendOrder",
+          "environment": {
+            "ORDERS_TO_SEND_QUEUE": {
+              "Ref": "OrdersToSendQueue"
+            }
+          },
+          "events": [],
+          "name": "burguer-dev-sendOrder",
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs22.x",
+          "vpc": {},
+          "versionLogicalId": "SendOrderLambdaVersionJAceTRw7MffN0uMv2VkC4O12CiGP4IscX2QA7TJ4s"
         }
+      },
+      "resources": {
+        "Resources": {
+          "PendingOrderQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "pendingOrderQueue"
+            }
+          },
+          "OrdersToSendQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "ordersToSendQueue"
+            }
+          }
+        },
+        "Outputs": {}
       }
     },
     "provider": {
       "name": "aws",
       "runtime": "nodejs22.x",
       "region": "us-east-1",
+      "environment": {
+        "REGION": "us-east-1"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:SendMessage"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "PendingOrderQueue",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:sendMessage"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "OrdersToSendQueue",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      },
       "stage": "dev",
       "versionFunctions": true,
       "compiledCloudFormationTemplate": {
@@ -468,6 +783,18 @@
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
               "LogGroupName": "/aws/lambda/burguer-dev-getOrder"
+            }
+          },
+          "PreOrderLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/burguer-dev-preOrder"
+            }
+          },
+          "SendOrderLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/burguer-dev-sendOrder"
             }
           },
           "IamRoleLambdaExecution": {
@@ -527,6 +854,46 @@
                             "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/burguer-dev*:*:*"
                           }
                         ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sqs:SendMessage"
+                        ],
+                        "Resource": {
+                          "Fn::GetAtt": [
+                            "PendingOrderQueue",
+                            "Arn"
+                          ]
+                        }
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sqs:sendMessage"
+                        ],
+                        "Resource": {
+                          "Fn::GetAtt": [
+                            "OrdersToSendQueue",
+                            "Arn"
+                          ]
+                        }
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sqs:ReceiveMessage",
+                          "sqs:DeleteMessage",
+                          "sqs:GetQueueAttributes"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "PendingOrderQueue",
+                              "Arn"
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }
@@ -553,13 +920,18 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
-                "S3Key": "serverless/burguer/dev/1742548683500-2025-03-21T09:18:03.500Z/burguer.zip"
+                "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
               },
               "Handler": "handler.newOrder",
               "Runtime": "nodejs22.x",
               "FunctionName": "burguer-dev-newOrder",
               "MemorySize": 1024,
               "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "REGION": "us-east-1"
+                }
+              },
               "Role": {
                 "Fn::GetAtt": [
                   "IamRoleLambdaExecution",
@@ -576,13 +948,18 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
-                "S3Key": "serverless/burguer/dev/1742548683500-2025-03-21T09:18:03.500Z/burguer.zip"
+                "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
               },
               "Handler": "handler.getOrder",
               "Runtime": "nodejs22.x",
               "FunctionName": "burguer-dev-getOrder",
               "MemorySize": 1024,
               "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "REGION": "us-east-1"
+                }
+              },
               "Role": {
                 "Fn::GetAtt": [
                   "IamRoleLambdaExecution",
@@ -594,24 +971,125 @@
               "GetOrderLogGroup"
             ]
           },
-          "NewOrderLambdaVersioniEWsltq5h3Tuli7di1O1KQUPHgPNHWF4aDTx1mKP6Fw": {
+          "PreOrderLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
+                "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
+              },
+              "Handler": "handler.preOrder",
+              "Runtime": "nodejs22.x",
+              "FunctionName": "burguer-dev-preOrder",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "REGION": "us-east-1"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "PreOrderLogGroup"
+            ]
+          },
+          "SendOrderLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
+                "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
+              },
+              "Handler": "handler.sendOrder",
+              "Runtime": "nodejs22.x",
+              "FunctionName": "burguer-dev-sendOrder",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "REGION": "us-east-1",
+                  "ORDERS_TO_SEND_QUEUE": {
+                    "Ref": "OrdersToSendQueue"
+                  }
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "SendOrderLogGroup"
+            ]
+          },
+          "NewOrderLambdaVersionXgFiHBs1wz4U2xK75ByDmNs5J2XMvUcI6zk2jywZQf0": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "NewOrderLambdaFunction"
               },
-              "CodeSha256": "Vg9VRzsFOQ2xqZEDI9A8p17yXsKByLmlDby2qaSdS10="
+              "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
             }
           },
-          "GetOrderLambdaVersionD9YRnhWLrFZtOi4LTJ4Vs6XICFh7KxyeCSb7t8IJQ": {
+          "GetOrderLambdaVersionfSHxgjSfw7QeoeM1KDzN96KJu0HjwuI2ssVAujEFRmM": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "GetOrderLambdaFunction"
               },
-              "CodeSha256": "Vg9VRzsFOQ2xqZEDI9A8p17yXsKByLmlDby2qaSdS10="
+              "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+            }
+          },
+          "PreOrderLambdaVersionsI1xpCuH2yISNyPV8XrWl5kQLt1txi2lDcB49aYic": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "PreOrderLambdaFunction"
+              },
+              "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+            }
+          },
+          "SendOrderLambdaVersionJAceTRw7MffN0uMv2VkC4O12CiGP4IscX2QA7TJ4s": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "SendOrderLambdaFunction"
+              },
+              "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+            }
+          },
+          "PreOrderEventSourceMappingSQSPendingOrderQueue": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+              "IamRoleLambdaExecution"
+            ],
+            "Properties": {
+              "BatchSize": 1,
+              "EventSourceArn": {
+                "Fn::GetAtt": [
+                  "PendingOrderQueue",
+                  "Arn"
+                ]
+              },
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "PreOrderLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Enabled": true
             }
           },
           "HttpApi": {
@@ -783,6 +1261,18 @@
               }
             },
             "DependsOn": "HttpApiIntegrationGetOrder"
+          },
+          "PendingOrderQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "pendingOrderQueue"
+            }
+          },
+          "OrdersToSendQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "ordersToSendQueue"
+            }
           }
         },
         "Outputs": {
@@ -795,7 +1285,7 @@
           "NewOrderLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "NewOrderLambdaVersioniEWsltq5h3Tuli7di1O1KQUPHgPNHWF4aDTx1mKP6Fw"
+              "Ref": "NewOrderLambdaVersionXgFiHBs1wz4U2xK75ByDmNs5J2XMvUcI6zk2jywZQf0"
             },
             "Export": {
               "Name": "sls-burguer-dev-NewOrderLambdaFunctionQualifiedArn"
@@ -804,10 +1294,28 @@
           "GetOrderLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "GetOrderLambdaVersionD9YRnhWLrFZtOi4LTJ4Vs6XICFh7KxyeCSb7t8IJQ"
+              "Ref": "GetOrderLambdaVersionfSHxgjSfw7QeoeM1KDzN96KJu0HjwuI2ssVAujEFRmM"
             },
             "Export": {
               "Name": "sls-burguer-dev-GetOrderLambdaFunctionQualifiedArn"
+            }
+          },
+          "PreOrderLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "PreOrderLambdaVersionsI1xpCuH2yISNyPV8XrWl5kQLt1txi2lDcB49aYic"
+            },
+            "Export": {
+              "Name": "sls-burguer-dev-PreOrderLambdaFunctionQualifiedArn"
+            }
+          },
+          "SendOrderLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "SendOrderLambdaVersionJAceTRw7MffN0uMv2VkC4O12CiGP4IscX2QA7TJ4s"
+            },
+            "Export": {
+              "Name": "sls-burguer-dev-SendOrderLambdaFunctionQualifiedArn"
             }
           },
           "HttpApiId": {
@@ -857,7 +1365,7 @@
       "serviceProvider": null,
       "instanceParameters": null
     },
-    "serviceRawFile": "service: burguer\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs22.x\r\n  region: us-east-1\r\n\r\nfunctions:\r\n  newOrder:\r\n    handler: handler.newOrder\r\n    events:\r\n      - httpApi:\r\n          path: /order\r\n          method: post\r\n  getOrder:\r\n    handler: handler.getOrder\r\n    events:\r\n      - httpApi:\r\n          path: /order/{orderId}\r\n          method: get",
+    "serviceRawFile": "service: burguer\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs22.x\r\n  region: us-east-1\r\n  environment:\r\n    REGION: ${self:provider.region}\r\n  iam:\r\n    role:\r\n      statements:\r\n        - Effect: Allow\r\n          Action:\r\n            - sqs:SendMessage\r\n          Resource:\r\n            Fn::GetAtt: [PendingOrderQueue, Arn]\r\n        - Effect: Allow\r\n          Action:\r\n            - sqs:sendMessage\r\n          Resource:\r\n            Fn::GetAtt: [OrdersToSendQueue, Arn]   \r\n\r\nfunctions:\r\n  newOrder:\r\n    handler: handler.newOrder\r\n    events:\r\n      - httpApi:\r\n          path: /order\r\n          method: post\r\n  getOrder:\r\n    handler: handler.getOrder\r\n    events:\r\n      - httpApi:\r\n          path: /order/{orderId}\r\n          method: get\r\n  preOrder:\r\n    handler: handler.preOrder\r\n    events:\r\n      - sqs:\r\n          arn:\r\n            Fn::GetAtt: [PendingOrderQueue, Arn]\r\n          batchSize: 1\r\n  sendOrder:\r\n    handler: handler.sendOrder\r\n    environment:\r\n      ORDERS_TO_SEND_QUEUE:\r\n        Ref: OrdersToSendQueue\r\n\r\nresources:\r\n  Resources:\r\n    PendingOrderQueue:\r\n      Type: AWS::SQS::Queue\r\n      Properties:\r\n        QueueName: pendingOrderQueue\r\n    OrdersToSendQueue:\r\n      Type: AWS::SQS::Queue\r\n      Properties:\r\n        QueueName: ordersToSendQueue\r\n    ",
     "command": [
       "deploy"
     ],
@@ -870,14 +1378,20 @@
     "serviceProviderAwsCfStackName": "burguer-dev",
     "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:920373012717:stack/burguer-dev/67c92040-062b-11f0-a549-124edefb5985",
     "serviceProviderAwsCfStackCreated": "2025-03-21T08:06:34.425Z",
-    "serviceProviderAwsCfStackUpdated": "2025-03-21T09:15:50.319Z",
+    "serviceProviderAwsCfStackUpdated": "2025-03-21T11:14:40.415Z",
     "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
     "serviceProviderAwsCfStackOutputs": [
       {
         "OutputKey": "GetOrderLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-east-1:920373012717:function:burguer-dev-getOrder:4",
+        "OutputValue": "arn:aws:lambda:us-east-1:920373012717:function:burguer-dev-getOrder:9",
         "Description": "Current Lambda function version",
         "ExportName": "sls-burguer-dev-GetOrderLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "PreOrderLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:920373012717:function:burguer-dev-preOrder:2",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-burguer-dev-PreOrderLambdaFunctionQualifiedArn"
       },
       {
         "OutputKey": "HttpApiId",
@@ -887,7 +1401,7 @@
       },
       {
         "OutputKey": "NewOrderLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-east-1:920373012717:function:burguer-dev-newOrder:5",
+        "OutputValue": "arn:aws:lambda:us-east-1:920373012717:function:burguer-dev-newOrder:10",
         "Description": "Current Lambda function version",
         "ExportName": "sls-burguer-dev-NewOrderLambdaFunctionQualifiedArn"
       },
@@ -917,6 +1431,18 @@
           "Type": "AWS::Logs::LogGroup",
           "Properties": {
             "LogGroupName": "/aws/lambda/burguer-dev-getOrder"
+          }
+        },
+        "PreOrderLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/burguer-dev-preOrder"
+          }
+        },
+        "SendOrderLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/burguer-dev-sendOrder"
           }
         },
         "IamRoleLambdaExecution": {
@@ -976,6 +1502,46 @@
                           "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/burguer-dev*:*:*"
                         }
                       ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sqs:SendMessage"
+                      ],
+                      "Resource": {
+                        "Fn::GetAtt": [
+                          "PendingOrderQueue",
+                          "Arn"
+                        ]
+                      }
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sqs:sendMessage"
+                      ],
+                      "Resource": {
+                        "Fn::GetAtt": [
+                          "OrdersToSendQueue",
+                          "Arn"
+                        ]
+                      }
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sqs:ReceiveMessage",
+                        "sqs:DeleteMessage",
+                        "sqs:GetQueueAttributes"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::GetAtt": [
+                            "PendingOrderQueue",
+                            "Arn"
+                          ]
+                        }
+                      ]
                     }
                   ]
                 }
@@ -1002,13 +1568,18 @@
           "Properties": {
             "Code": {
               "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
-              "S3Key": "serverless/burguer/dev/1742548683500-2025-03-21T09:18:03.500Z/burguer.zip"
+              "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
             },
             "Handler": "handler.newOrder",
             "Runtime": "nodejs22.x",
             "FunctionName": "burguer-dev-newOrder",
             "MemorySize": 1024,
             "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "REGION": "us-east-1"
+              }
+            },
             "Role": {
               "Fn::GetAtt": [
                 "IamRoleLambdaExecution",
@@ -1025,13 +1596,18 @@
           "Properties": {
             "Code": {
               "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
-              "S3Key": "serverless/burguer/dev/1742548683500-2025-03-21T09:18:03.500Z/burguer.zip"
+              "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
             },
             "Handler": "handler.getOrder",
             "Runtime": "nodejs22.x",
             "FunctionName": "burguer-dev-getOrder",
             "MemorySize": 1024,
             "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "REGION": "us-east-1"
+              }
+            },
             "Role": {
               "Fn::GetAtt": [
                 "IamRoleLambdaExecution",
@@ -1043,24 +1619,125 @@
             "GetOrderLogGroup"
           ]
         },
-        "NewOrderLambdaVersioniEWsltq5h3Tuli7di1O1KQUPHgPNHWF4aDTx1mKP6Fw": {
+        "PreOrderLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
+              "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
+            },
+            "Handler": "handler.preOrder",
+            "Runtime": "nodejs22.x",
+            "FunctionName": "burguer-dev-preOrder",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "REGION": "us-east-1"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "PreOrderLogGroup"
+          ]
+        },
+        "SendOrderLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-aed98ef0-32e2",
+              "S3Key": "serverless/burguer/dev/1742557130791-2025-03-21T11:38:50.791Z/burguer.zip"
+            },
+            "Handler": "handler.sendOrder",
+            "Runtime": "nodejs22.x",
+            "FunctionName": "burguer-dev-sendOrder",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "REGION": "us-east-1",
+                "ORDERS_TO_SEND_QUEUE": {
+                  "Ref": "OrdersToSendQueue"
+                }
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "SendOrderLogGroup"
+          ]
+        },
+        "NewOrderLambdaVersionXgFiHBs1wz4U2xK75ByDmNs5J2XMvUcI6zk2jywZQf0": {
           "Type": "AWS::Lambda::Version",
           "DeletionPolicy": "Retain",
           "Properties": {
             "FunctionName": {
               "Ref": "NewOrderLambdaFunction"
             },
-            "CodeSha256": "Vg9VRzsFOQ2xqZEDI9A8p17yXsKByLmlDby2qaSdS10="
+            "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
           }
         },
-        "GetOrderLambdaVersionD9YRnhWLrFZtOi4LTJ4Vs6XICFh7KxyeCSb7t8IJQ": {
+        "GetOrderLambdaVersionfSHxgjSfw7QeoeM1KDzN96KJu0HjwuI2ssVAujEFRmM": {
           "Type": "AWS::Lambda::Version",
           "DeletionPolicy": "Retain",
           "Properties": {
             "FunctionName": {
               "Ref": "GetOrderLambdaFunction"
             },
-            "CodeSha256": "Vg9VRzsFOQ2xqZEDI9A8p17yXsKByLmlDby2qaSdS10="
+            "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+          }
+        },
+        "PreOrderLambdaVersionsI1xpCuH2yISNyPV8XrWl5kQLt1txi2lDcB49aYic": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "PreOrderLambdaFunction"
+            },
+            "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+          }
+        },
+        "SendOrderLambdaVersionJAceTRw7MffN0uMv2VkC4O12CiGP4IscX2QA7TJ4s": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "SendOrderLambdaFunction"
+            },
+            "CodeSha256": "mJrnFoMUdHw4qxxKWASLODwF37Vx3+PrE1HCenDFLOo="
+          }
+        },
+        "PreOrderEventSourceMappingSQSPendingOrderQueue": {
+          "Type": "AWS::Lambda::EventSourceMapping",
+          "DependsOn": [
+            "IamRoleLambdaExecution"
+          ],
+          "Properties": {
+            "BatchSize": 1,
+            "EventSourceArn": {
+              "Fn::GetAtt": [
+                "PendingOrderQueue",
+                "Arn"
+              ]
+            },
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "PreOrderLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Enabled": true
           }
         },
         "HttpApi": {
@@ -1232,6 +1909,18 @@
             }
           },
           "DependsOn": "HttpApiIntegrationGetOrder"
+        },
+        "PendingOrderQueue": {
+          "Type": "AWS::SQS::Queue",
+          "Properties": {
+            "QueueName": "pendingOrderQueue"
+          }
+        },
+        "OrdersToSendQueue": {
+          "Type": "AWS::SQS::Queue",
+          "Properties": {
+            "QueueName": "ordersToSendQueue"
+          }
         }
       },
       "Outputs": {
@@ -1244,7 +1933,7 @@
         "NewOrderLambdaFunctionQualifiedArn": {
           "Description": "Current Lambda function version",
           "Value": {
-            "Ref": "NewOrderLambdaVersioniEWsltq5h3Tuli7di1O1KQUPHgPNHWF4aDTx1mKP6Fw"
+            "Ref": "NewOrderLambdaVersionXgFiHBs1wz4U2xK75ByDmNs5J2XMvUcI6zk2jywZQf0"
           },
           "Export": {
             "Name": "sls-burguer-dev-NewOrderLambdaFunctionQualifiedArn"
@@ -1253,10 +1942,28 @@
         "GetOrderLambdaFunctionQualifiedArn": {
           "Description": "Current Lambda function version",
           "Value": {
-            "Ref": "GetOrderLambdaVersionD9YRnhWLrFZtOi4LTJ4Vs6XICFh7KxyeCSb7t8IJQ"
+            "Ref": "GetOrderLambdaVersionfSHxgjSfw7QeoeM1KDzN96KJu0HjwuI2ssVAujEFRmM"
           },
           "Export": {
             "Name": "sls-burguer-dev-GetOrderLambdaFunctionQualifiedArn"
+          }
+        },
+        "PreOrderLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "PreOrderLambdaVersionsI1xpCuH2yISNyPV8XrWl5kQLt1txi2lDcB49aYic"
+          },
+          "Export": {
+            "Name": "sls-burguer-dev-PreOrderLambdaFunctionQualifiedArn"
+          }
+        },
+        "SendOrderLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "SendOrderLambdaVersionJAceTRw7MffN0uMv2VkC4O12CiGP4IscX2QA7TJ4s"
+          },
+          "Export": {
+            "Name": "sls-burguer-dev-SendOrderLambdaFunctionQualifiedArn"
           }
         },
         "HttpApiId": {
